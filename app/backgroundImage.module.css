@@ -1,0 +1,43 @@
+.container {
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  height: 100vh; 
+}
+
+.title {
+  font-size: 2rem;
+  margin-top: 20px;
+  position: relative; 
+  z-index: 1; 
+  color: blue; 
+}
+
+.description {
+  font-size: 1.2rem;
+  margin-bottom: 20px;
+  position: relative; 
+  z-index: 1; 
+  color: blue; 
+}
+
+.backgroundImage {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: auto;
+  height: 100%; 
+  max-width: none; 
+  transform: translate(-50%, -50%);
+  animation: slide 15s infinite alternate ease-in-out; 
+  z-index: 0; 
+}
+
+@keyframes slide {
+  0% {
+    transform: translate(-50%, -50%) translateX(0);
+  }
+  100% {
+    transform: translate(-50%, -50%) translateX(-10%); 
+  }
+}
