@@ -1,9 +1,12 @@
-"use client";
+"use client"; // Pastikan ini ada untuk menandakan ini adalah komponen klien
 import axios from "axios";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { IoClose } from "react-icons/io5";
 import Tambah from "./action/Add";
-import DataTable from "react-data-table-component";
+import dynamic from 'next/dynamic'; // Untuk memuat komponen secara dinamis di klien
+
+// Muat DataTable secara dinamis di klien
+const DataTable = dynamic(() => import("react-data-table-component"), { ssr: false });
 import * as XLSX from "xlsx"; // Import XLSX untuk ekspor ke Excel
 
 const KelasSiswa = () => {
@@ -21,12 +24,6 @@ const KelasSiswa = () => {
     getKelasSiswa();
   }, []);
 
-  useEffect(() => {
-    if (selected) {
-      filterSiswaByKelas(selected); // Filter siswa saat kelas dipilih
-    }
-  }, [selected, kelasSiswa]);
-
   const loadKelas = async () => {
     const res = await axios.get("/api/kelas");
     setKelas(res.data);
@@ -37,12 +34,18 @@ const KelasSiswa = () => {
     setKelasSiswa(res.data);
   };
 
-  const filterSiswaByKelas = (kelasId: string) => {
+  const filterSiswaByKelas = useCallback((kelasId: string) => {
     const siswaFiltered = kelasSiswa.filter(
       (ks: any) => ks.kelasId === parseInt(kelasId)
     );
     setFilteredSiswa(siswaFiltered);
-  };
+  }, [kelasSiswa]);
+
+  useEffect(() => {
+    if (selected) {
+      filterSiswaByKelas(selected); // Filter siswa saat kelas dipilih
+    }
+  }, [selected, filterSiswaByKelas]);
 
   const handleRowsPerPageChange = (newPerPage: number, page: number) => {
     setItemsPerPage(newPerPage);
@@ -91,10 +94,10 @@ const KelasSiswa = () => {
     try {
       await axios.delete(`/api/kelassiswa/${id}`);
       reload();
-      showAlert("Berhasil menghapus siswa.", "success"); // Alert sukses
+      showAlert("Berhasil menghapus siswa.", "success");
     } catch (error) {
       console.error("Gagal menghapus siswa:", error);
-      showAlert("Gagal menghapus siswa.", "danger"); // Alert gagal
+      showAlert("Gagal menghapus siswa.", "danger");
     }
   };
 
@@ -105,50 +108,33 @@ const KelasSiswa = () => {
     }
   };
 
-  // Fungsi untuk menampilkan alert
   const showAlert = (message: string, type: string) => {
     setAlert({ visible: true, message, type });
     setTimeout(() => {
       setAlert({ visible: false, message: "", type: "" });
-    }, 3000); // Menutup alert setelah 3 detik
+    }, 3000);
   };
 
-  // Fungsi untuk mengekspor data ke Excel
   const handleExport = () => {
-    // Siapkan data siswa
     const dataToExport = filteredSiswa.map((siswa: any) => {
       const rowData: any = {
         Nama: siswa.siswaTb?.nama,
         Kelas: siswa.kelasTb?.nama,
       };
 
-      // Menambahkan kolom kosong hanya dengan angka (1-30) untuk setiap tanggal
       for (let i = 1; i <= 30; i++) {
-        rowData[i] = ""; // Kolom absensi kosong
+        rowData[i] = "";
       }
 
       return rowData;
     });
 
     const workbook = XLSX.utils.book_new();
-
-    // Nama bulan dari Januari hingga Desember
     const bulan = [
-      "Januari",
-      "Februari",
-      "Maret",
-      "April",
-      "Mei",
-      "Juni",
-      "Juli",
-      "Agustus",
-      "September",
-      "Oktober",
-      "November",
-      "Desember",
+      "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+      "Juli", "Agustus", "September", "Oktober", "November", "Desember"
     ];
 
-    // Membuat sheet untuk setiap bulan
     bulan.forEach((namaBulan) => {
       const worksheet = XLSX.utils.json_to_sheet(dataToExport, {
         header: ["Nama", "Kelas", ...Array.from({ length: 30 }, (_, i) => (i + 1).toString())],
@@ -156,10 +142,8 @@ const KelasSiswa = () => {
       XLSX.utils.book_append_sheet(workbook, worksheet, namaBulan);
     });
 
-    // Menulis file dengan nama "AbsensiSiswa.xlsx"
     XLSX.writeFile(workbook, "AbsensiSiswa.xlsx");
-
-    showAlert("Data berhasil diekspor ke Excel.", "success"); // Alert ekspor sukses
+    showAlert("Data berhasil diekspor ke Excel.", "success");
   };
 
   return (
@@ -168,12 +152,11 @@ const KelasSiswa = () => {
         <h1 className="card-title">Data Kelassiswa</h1>
       </div>
 
-      {/* Dropdown untuk memilih kelas */}
       <div className="row justify-content-between mb-4">
         <div className="col-md-6">
           <select
             className="form-select"
-            style={{ height: '40px' }} // Mengatur tinggi dropdown agar sesuai dengan tombol
+            style={{ height: '40px' }}
             value={selected}
             onChange={(e) => setSelected(e.target.value)}
           >
@@ -189,7 +172,6 @@ const KelasSiswa = () => {
         </div>
       </div>
 
-      {/* Tombol untuk menambah dan mengekspor */}
       <div className={!selected ? "d-none" : "d-flex justify-content-between mb-4"}>
         <div className="me-auto">
           <Tambah reload={reload} alert={setAlert} kelasId={selected} />
@@ -201,7 +183,6 @@ const KelasSiswa = () => {
         </div>
       </div>
 
-      {/* Alert sukses */}
       {alert.visible && (
         <div className={`alert alert-${alert.type} alert-dismissible fade show`} role="alert">
           <strong>{alert.message}</strong>

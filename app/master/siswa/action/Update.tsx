@@ -1,99 +1,95 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable @next/next/no-img-element */
-"use client"
-import { useState, SyntheticEvent } from "react"
-import {  siswaTb } from "@prisma/client"
-import axios from "axios"
+"use client";
+import { useState, SyntheticEvent } from "react";
+import { siswaTb } from "@prisma/client";
+import axios from "axios";
 import Modal from 'react-bootstrap/Modal';
-import Swal from "sweetalert2"
-import moment from "moment"
-import Siswa from "../page";
-// import { StyleSelect } from "@/app/helper";
+import Swal from "sweetalert2";
+import moment from "moment";
 
-
-function Update({ siswa,  reload }: { siswa: siswaTb, reload: Function }) {
-
-    const [nisn, setNisn] = useState(siswa.nisn)
-    const [nama, setNama] = useState(siswa.nama)
-    const [jurusan, setJurusan] = useState(siswa.jurusan)
-    const [jenisKelamin, setjenisKelamin] = useState(siswa.jenisKelamin)
-    const [agama, setAgama] = useState(siswa.agama)
-    const [tempatLahir, setTempatlahir] = useState(siswa.tempatLahir)
-    const [tanggalLahir, setTanggallahir] = useState(moment(siswa.tanggalLahir).format("YYYY-MM-DD"))
-    const [alamat, setAlamat] = useState(siswa.alamat)
-    const [hp, setHp] = useState(siswa.hp)
-    const [st, setSt] = useState(false);
-    const [isLoading, setIsLoading] = useState(false)
-    if (isLoading) {
-        Swal.fire({
-            title: "Mohon tunggu!",
-            html: "Sedang mengirim data ke server",
-            allowOutsideClick: false,
-            didOpen: () => {
-                Swal.showLoading();
-            },
-        })
-    }
-
-    const refreshform = () => {
-        setNisn(siswa.nisn)
-        setNama(siswa.nama)
-        setJurusan(siswa.jurusan)
-        setjenisKelamin(siswa.jenisKelamin)
-        setAgama(siswa.agama)
-        setTempatlahir(siswa.tempatLahir)
-        setTanggallahir(moment(siswa.tanggalLahir).format("YYYY-MM-DD"))
-        setAlamat(siswa.alamat)
-        setHp(siswa.hp)
-    }
-
-    const [show, setShow] = useState(false)
+function Update({ siswa, reload }: { siswa: siswaTb, reload: Function }) {
+    const [nisn, setNisn] = useState(siswa.nisn);
+    const [nama, setNama] = useState(siswa.nama);
+    const [jurusan, setJurusan] = useState(siswa.jurusan);
+    const [jenisKelamin, setjenisKelamin] = useState(siswa.jenisKelamin);
+    const [agama, setAgama] = useState(siswa.agama);
+    const [tempatLahir, setTempatlahir] = useState(siswa.tempatLahir);
+    const [tanggalLahir, setTanggallahir] = useState(moment(siswa.tanggalLahir).format("YYYY-MM-DD"));
+    const [alamat, setAlamat] = useState(siswa.alamat);
+    const [hp, setHp] = useState(siswa.hp);
+    const [isLoading, setIsLoading] = useState(false);
+    const [show, setShow] = useState(false);
 
     const handleClose = () => {
         setShow(false);
-        refreshform()
+        refreshform();
     }
 
-    const handleShow = () => setShow(true)
+    const handleShow = () => setShow(true);
+
+    const refreshform = () => {
+        setNisn(siswa.nisn);
+        setNama(siswa.nama);
+        setJurusan(siswa.jurusan);
+        setjenisKelamin(siswa.jenisKelamin);
+        setAgama(siswa.agama);
+        setTempatlahir(siswa.tempatLahir);
+        setTanggallahir(moment(siswa.tanggalLahir).format("YYYY-MM-DD"));
+        setAlamat(siswa.alamat);
+        setHp(siswa.hp);
+    }
 
     const handleUpdate = async (e: SyntheticEvent) => {
-        setIsLoading(true)
-        e.preventDefault()
-        try {
-            const formData = new FormData()
-            formData.append('nisn', nisn)
-            formData.append('nama', nama)
-            formData.append('jurusan', jurusan)
-            formData.append('tempatlahir', tempatLahir)
-            formData.append('tanggallahir', new Date(tanggalLahir).toISOString())
-            formData.append('alamat', alamat)
-            formData.append('hp', hp)
-            formData.append('jenisKelamin', jenisKelamin)
-            formData.append('agama', agama)
+        e.preventDefault();
+        setIsLoading(true);
 
-            const xxx = await axios.patch(`/api/siswa/${siswa.id}`, formData, {
+        try {
+            const formData = new FormData();
+            formData.append('nisn', nisn);
+            formData.append('nama', nama);
+            formData.append('jurusan', jurusan);
+            formData.append('tempatlahir', tempatLahir);
+            formData.append('tanggallahir', new Date(tanggalLahir).toISOString());
+            formData.append('alamat', alamat);
+            formData.append('hp', hp);
+            formData.append('jenisKelamin', jenisKelamin);
+            formData.append('agama', agama);
+
+            const response = await axios.patch(`/api/siswa/${siswa.id}`, formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
                 },
-            })
+            });
 
-            setTimeout(function () {
-
-                if (xxx.data.pesan == 'sudah ada hp') {
-                    setIsLoading(false)
-                    Swal.fire({
-                        position: 'top-end',
-                        icon: 'warning',
-                        title: 'No Hp ini sudah terdaftar',
-                        showConfirmButton: false,
-                        timer: 1500
-                    })
-
-                }
-
-            }, 1500);
+            if (response.data.pesan === 'sudah ada hp') {
+                Swal.fire({
+                    position: 'center',
+                    icon: 'warning',
+                    title: 'No Hp ini sudah terdaftar',
+                    showConfirmButton: false,
+                    timer: 1500
+                });
+            } else {
+                Swal.fire({
+                    position: 'center',
+                    icon: 'success',
+                    title: 'Data berhasil diperbarui',
+                    showConfirmButton: false,
+                    timer: 1500
+                });
+                reload(); // Memanggil fungsi reload untuk memperbarui halaman
+                handleClose(); // Menutup modal setelah pembaruan
+            }
         } catch (error) {
             console.error('Error:', error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Oops...',
+                text: 'Terjadi kesalahan saat memperbarui data!',
+            });
+        } finally {
+            setIsLoading(false);
         }
     }
 
@@ -159,21 +155,21 @@ function Update({ siswa,  reload }: { siswa: siswaTb, reload: Function }) {
                         </div>
 
                         <div className="mb-3 col-md-6">
-                                <label className="col-sm-6 col-form-label">Agama</label>
-                                <select
-                                    required
-                                    className="form-control"
-                                    value={agama}
-                                    onChange={(e) => setAgama(e.target.value)}
-                                >
-                                    <option value="">Pilih Agama</option>
-                                    <option value="Islam">Islam</option>
-                                    <option value="Kristen">Kristen</option>
-                                    <option value="Hindu">Hindu</option>
-                                    <option value="Budha">Budha</option>
-                                    <option value="Konghucu">Konghucu</option>
-                                </select>
-                            </div>
+                            <label className="col-sm-6 col-form-label">Agama</label>
+                            <select
+                                required
+                                className="form-control"
+                                value={agama}
+                                onChange={(e) => setAgama(e.target.value)}
+                            >
+                                <option value="">Pilih Agama</option>
+                                <option value="Islam">Islam</option>
+                                <option value="Kristen">Kristen</option>
+                                <option value="Hindu">Hindu</option>
+                                <option value="Budha">Budha</option>
+                                <option value="Konghucu">Konghucu</option>
+                            </select>
+                        </div>
 
                         <div className="row">
                             <div className="mb-3 col-md-6">
@@ -185,12 +181,11 @@ function Update({ siswa,  reload }: { siswa: siswaTb, reload: Function }) {
                                     value={tempatLahir} onChange={(e) => setTempatlahir(e.target.value)}
                                 />
                             </div>
-                           
                         </div>
 
                         <div className="row">
                             <div className="mb-3 col-md-6">
-                                <label className="col-sm-6 col-form-label" >Tanggal lahir</label>
+                                <label className="col-sm-6 col-form-label">Tanggal lahir</label>
                                 <input
                                     required
                                     type="date"
@@ -205,8 +200,6 @@ function Update({ siswa,  reload }: { siswa: siswaTb, reload: Function }) {
                                         required
                                         type="text"
                                         className="form-control"
-                                        aria-label="Recipient's username"
-                                        aria-describedby="basic-addon2"
                                         value={alamat} onChange={(e) => setAlamat(e.target.value)}
                                     />
                                 </div>
@@ -231,7 +224,7 @@ function Update({ siswa,  reload }: { siswa: siswaTb, reload: Function }) {
                 </form>
             </Modal>
         </div>
-    )
+    );
 }
 
-export default Update
+export default Update;

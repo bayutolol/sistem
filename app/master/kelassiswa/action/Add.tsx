@@ -1,6 +1,6 @@
 "use client";
 import axios from "axios";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import { Modal } from "bootstrap"; // Import API Modal dari Bootstrap
 
 interface Props {
@@ -12,41 +12,52 @@ interface Props {
 const Tambah = ({ alert, reload, kelasId }: Props) => {
   const [siswaId, setSiswaId] = useState("");
   const [newkelasId, setKelasId] = useState(kelasId);
-  const [listNama, setListNama] = useState([]);
-  const [existingSiswaIds, setExistingSiswaIds] = useState<string[]>([]); // State untuk menyimpan siswa yang sudah ada di kelas
-  const [errorMessage, setErrorMessage] = useState(""); // State untuk pesan error
+  const [listNama, setListNama] = useState([]); // Daftar siswa
+  const [existingSiswaIds, setExistingSiswaIds] = useState<string[]>([]); // Siswa yang sudah ada di kelas
+  const [errorMessage, setErrorMessage] = useState(""); // Pesan error
   const modalRef = useRef<HTMLDivElement | null>(null); // Ref untuk modal
   const [modalInstance, setModalInstance] = useState<Modal | null>(null); // Simpan instansiasi modal
 
-  useEffect(() => {
-    getSiswa();
-    getSiswaDiKelas(); // Ambil siswa yang sudah ada di kelas saat komponen dimuat
-  }, []);
-
-  useEffect(() => {
-    setKelasId(kelasId);
-  }, [kelasId]);
-
-  useEffect(() => {
-    // Inisialisasi modal saat modalRef tersedia
-    if (modalRef.current) {
-      const instance = new Modal(modalRef.current);
-      setModalInstance(instance);
-    }
-  }, [modalRef]);
-
+  // Fungsi untuk mendapatkan daftar siswa
   const getSiswa = async () => {
     const res = await axios.get("/api/siswa");
     const hasil = res.data;
     setListNama(hasil);
   };
 
-  const getSiswaDiKelas = async () => {
+  // Menggunakan useCallback untuk mencegah fungsi berubah setiap render ulang
+  const getSiswaDiKelas = useCallback(async () => {
     const res = await axios.get(`/api/kelassiswa?kelasId=${newkelasId}`);
     const existingSiswa = res.data.map((item: any) => item.siswaId); // Ambil ID siswa yang sudah ada di kelas
     setExistingSiswaIds(existingSiswa);
+  }, [newkelasId]);
+
+  // Mengambil siswa dan siswa yang sudah ada di kelas saat komponen dimuat
+  useEffect(() => {
+    getSiswa();
+    getSiswaDiKelas();
+  }, [getSiswaDiKelas]);
+
+  // Memperbarui newkelasId jika kelasId berubah
+  useEffect(() => {
+    setKelasId(kelasId);
+  }, [kelasId]);
+
+  // Inisialisasi modal saat modalRef tersedia
+  useEffect(() => {
+    if (modalRef.current) {
+      const instance = new Modal(modalRef.current);
+      setModalInstance(instance);
+    }
+  }, [modalRef]);
+
+  // Fungsi untuk mendapatkan jumlah siswa di kelas tertentu
+  const getJumlahSiswaDiKelas = async () => {
+    const res = await axios.get(`/api/kelassiswa?kelasId=${newkelasId}`);
+    return res.data.length; // Mengembalikan jumlah siswa dalam kelas
   };
 
+  // Fungsi untuk menampilkan modal
   const handleShow = () => {
     setErrorMessage(""); // Reset pesan error ketika modal dibuka
     if (modalInstance) {
@@ -54,6 +65,7 @@ const Tambah = ({ alert, reload, kelasId }: Props) => {
     }
   };
 
+  // Fungsi untuk menutup modal
   const handleClose = () => {
     if (modalInstance) {
       modalInstance.hide(); // Sembunyikan modal
@@ -63,12 +75,7 @@ const Tambah = ({ alert, reload, kelasId }: Props) => {
     }
   };
 
-  const getJumlahSiswaDiKelas = async () => {
-    // Memanggil API untuk mendapatkan jumlah siswa dalam kelas tertentu
-    const res = await axios.get(`/api/kelassiswa?kelasId=${newkelasId}`);
-    return res.data.length; // Mengembalikan jumlah siswa dalam kelas
-  };
-
+  // Fungsi untuk menambah siswa ke kelas
   const handleTambah = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
     try {
